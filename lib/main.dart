@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_handler/share_handler.dart';
 
+import 'app_theme.dart';
+import 'home_menu.dart';
 import 'share_inbox.dart';
 import 'tabs/account_tab.dart';
 import 'tabs/apk_tab.dart';
@@ -21,10 +23,7 @@ class CyberLensApp extends StatelessWidget {
     return MaterialApp(
       title: 'CyberLens',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0B0F19),
-        colorScheme: const ColorScheme.dark(primary: Color(0xFF22D3EE)),
-      ),
+      theme: buildAppTheme(),
       home: const HomeScreen(),
     );
   }
@@ -38,18 +37,29 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _index = 0;
+  // 0 = menu, 1 = link, 2 = email, 3 = QR, 4 = account, 5 = APK
+  int _page = 0;
   StreamSubscription<SharedMedia>? _shareSub;
 
   // True if the app was opened by (or already received) a share
   bool _gotShare = false;
 
   static const List<String> _titles = [
-    'URL Phishing Scanner',
-    'Email Phishing Scanner',
-    'QR Code Scanner',
-    'Account Takeover Check',
-    'APK Malware Scanner',
+    '\u{1F6E1}\u{FE0F} CyberLens',
+    'Link Checker',
+    'Email Checker',
+    'QR Checker',
+    'Account Check',
+    'APK Checker',
+  ];
+
+  static const List<String> _subtitles = [
+    'Your safety buddy',
+    'Is this link safe?',
+    'Spot phishing emails',
+    'Check a QR code before you trust it',
+    'Demo with simulated activity',
+    'Check an app file before installing',
   ];
 
   @override
@@ -77,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await handler.resetInitialSharedMedia();
       }
     } catch (_) {
-      // Sharing is optional; the 5 tabs keep working without it
+      // Sharing is optional; the checkers keep working without it
     }
     // Shares that arrive while the app is already open
     _shareSub = handler.sharedMediaStream.listen(_handleShared);
@@ -150,53 +160,97 @@ class _HomeScreenState extends State<HomeScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  int _tabFor(ShareKind kind) {
+  int _pageFor(ShareKind kind) {
     switch (kind) {
       case ShareKind.url:
-        return 0;
-      case ShareKind.email:
         return 1;
-      case ShareKind.qr:
+      case ShareKind.email:
         return 2;
+      case ShareKind.qr:
+        return 3;
       case ShareKind.apk:
-        return 4;
+        return 5;
     }
   }
 
   void _onInbox() {
     final request = ShareInbox.current.value;
     if (request == null) return;
-    setState(() => _index = _tabFor(request.kind));
+    setState(() => _page = _pageFor(request.kind));
   }
+
+  void _goTo(int page) => setState(() => _page = page);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('\u{1F50D} ${_titles[_index]}'),
-        backgroundColor: const Color(0xFF0F172A),
-      ),
-      // IndexedStack keeps each tab's state when you switch between tabs
-      body: IndexedStack(
-        index: _index,
-        children: const [
-          UrlTab(),
-          EmailTab(),
-          QrTab(),
-          AccountTab(),
-          ApkTab(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.link), label: 'URL'),
-          NavigationDestination(icon: Icon(Icons.email_outlined), label: 'Email'),
-          NavigationDestination(icon: Icon(Icons.qr_code_scanner), label: 'QR'),
-          NavigationDestination(icon: Icon(Icons.manage_accounts_outlined), label: 'Account'),
-          NavigationDestination(icon: Icon(Icons.android), label: 'APK'),
-        ],
+    final onMenu = _page == 0;
+    return PopScope(
+      // On a tool, the back button returns to the menu instead of closing the app
+      canPop: onMenu,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _goTo(0);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 72,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          automaticallyImplyLeading: false,
+          titleSpacing: onMenu ? 20 : 0,
+          foregroundColor: AppColors.ink,
+          backgroundColor: Colors.transparent,
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.mint, AppColors.sky],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          leading: onMenu
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  tooltip: 'Back to all checkers',
+                  onPressed: () => _goTo(0),
+                ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: Text(
+                  _titles[_page],
+                  key: ValueKey<String>('t$_page'),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                ),
+              ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: Text(
+                  _subtitles[_page],
+                  key: ValueKey<String>('s$_page'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // IndexedStack builds every page once and keeps its state
+        // (so results survive going back to the menu, and shares always find a listener)
+        body: IndexedStack(
+          index: _page,
+          children: [
+            HomeMenu(onOpen: _goTo),
+            const UrlTab(),
+            const EmailTab(),
+            const QrTab(),
+            const AccountTab(),
+            const ApkTab(),
+          ],
+        ),
       ),
     );
   }

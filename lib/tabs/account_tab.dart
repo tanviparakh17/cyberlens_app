@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api_service.dart';
 import '../scan_widgets.dart';
+import '../app_theme.dart';
 
 class AccountTab extends StatefulWidget {
   const AccountTab({super.key});
@@ -73,7 +74,7 @@ class _AccountTabState extends State<AccountTab> with ScanRunner<AccountTab> {
           if (_loadingScenarios)
             const Center(child: CircularProgressIndicator())
           else if (_scenarioError != null) ...[
-            Text(_scenarioError!, style: const TextStyle(color: Colors.redAccent)),
+            Text(_scenarioError!, style: const TextStyle(color: AppColors.danger)),
             const SizedBox(height: 8),
             OutlinedButton(onPressed: _loadScenarios, child: const Text('Retry')),
           ] else ...[
@@ -93,7 +94,7 @@ class _AccountTabState extends State<AccountTab> with ScanRunner<AccountTab> {
               Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 8),
                 child: Text(_descriptionOf(_selected!),
-                    style: const TextStyle(color: Colors.white60)),
+                    style: const TextStyle(color: AppColors.muted)),
               ),
             const SizedBox(height: 8),
             ElevatedButton(

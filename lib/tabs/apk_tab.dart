@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../api_service.dart';
 import '../scan_widgets.dart';
+import '../app_theme.dart';
 import '../share_inbox.dart';
 
 class ApkTab extends StatefulWidget {
@@ -138,7 +139,7 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
                 child: Text(
                   'Shared from another app. Scanning uploads this APK to the '
                   'CyberLens server.',
-                  style: TextStyle(color: Colors.white60),
+                  style: TextStyle(color: AppColors.muted),
                 ),
               ),
             ListTile(

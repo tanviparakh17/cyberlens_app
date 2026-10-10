@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'app_theme.dart';
 
 /// Shared loading / error / result state for every scan tab.
 mixin ScanRunner<T extends StatefulWidget> on State<T> {
@@ -58,7 +59,7 @@ class ScanOutput extends StatelessWidget {
             Text(loadingText, textAlign: TextAlign.center),
           ]),
         if (error != null)
-          Text(error!, style: const TextStyle(color: Colors.redAccent)),
+          Text(error!, style: const TextStyle(color: AppColors.danger)),
         if (result != null) ResultView(result: result!),
       ],
     );
@@ -81,11 +82,11 @@ class ResultView extends StatelessWidget {
     switch (verdict) {
       case 'phishing':
       case 'malicious':
-        return Colors.redAccent;
+        return AppColors.danger;
       case 'suspicious':
-        return Colors.orangeAccent;
+        return AppColors.warn;
       default:
-        return Colors.greenAccent;
+        return AppColors.safe;
     }
   }
 
@@ -159,7 +160,7 @@ class ResultView extends StatelessWidget {
               LinearProgressIndicator(
                 value: (riskScore / 100).clamp(0.0, 1.0),
                 color: color,
-                backgroundColor: Colors.white12,
+                backgroundColor: AppColors.track,
                 minHeight: 8,
               ),
               if (confidencePct != null) ...[
@@ -176,7 +177,7 @@ class ResultView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orangeAccent.withAlpha(30),
+              color: AppColors.warn.withAlpha(30),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
@@ -198,7 +199,7 @@ class ResultView extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 130,
-                    child: Text(d.key, style: const TextStyle(color: Colors.white60)),
+                    child: Text(d.key, style: const TextStyle(color: AppColors.muted)),
                   ),
                   Expanded(child: SelectableText(d.value)),
                 ],
@@ -215,7 +216,7 @@ class ResultView extends StatelessWidget {
             const Spacer(),
             if (explanationType != null)
               Text(explanationType == 'shap' ? 'Explained with SHAP' : 'Rule-based',
-                  style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ]),
           const SizedBox(height: 8),
           for (final f in factors)
@@ -224,11 +225,11 @@ class ResultView extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               title: Text(pretty(f[0] as String)),
               subtitle: Text((f[1] as num).toStringAsFixed(3),
-                  style: const TextStyle(color: Colors.white38)),
+                  style: const TextStyle(color: AppColors.faint)),
               trailing: Text(
                 (f[1] as num) > 0 ? '▲ Increased Risk' : '▼ Decreased Risk',
                 style: TextStyle(
-                  color: (f[1] as num) > 0 ? Colors.redAccent : Colors.greenAccent,
+                  color: (f[1] as num) > 0 ? AppColors.danger : AppColors.safe,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -273,7 +274,7 @@ class ResultView extends StatelessWidget {
         if (report != null) ...[
           const SizedBox(height: 16),
           Card(
-            color: const Color(0xFF0F172A),
+            color: AppColors.surfaceTint,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: SelectableText(report),
