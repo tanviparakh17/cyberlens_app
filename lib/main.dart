@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_handler/share_handler.dart';
 
 import 'share_inbox.dart';
@@ -40,6 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
   StreamSubscription<SharedMedia>? _shareSub;
 
+  // True if the app was opened by (or already received) a share
+  bool _gotShare = false;
+
   static const List<String> _titles = [
     'URL Phishing Scanner',
     'Email Phishing Scanner',
@@ -77,9 +81,40 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     // Shares that arrive while the app is already open
     _shareSub = handler.sharedMediaStream.listen(_handleShared);
+
+    // A share has priority; only offer the copied link on a normal launch
+    if (!_gotShare) _checkClipboard();
+  }
+
+  Future<void> _checkClipboard() async {
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      final link = ShareInbox.bareLink(data?.text ?? '');
+      if (link == null || !mounted || _gotShare) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 12),
+          content: Text(
+            'Scan copied link?\n$link',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          action: SnackBarAction(
+            label: 'Scan',
+            onPressed: () => ShareInbox.send(
+              ShareInbox.build(ShareKind.url, link, autoScan: true),
+            ),
+          ),
+        ),
+      );
+    } catch (_) {
+      // Clipboard not available; nothing to offer
+    }
   }
 
   void _handleShared(SharedMedia media) {
+    _gotShare = true;
+
     // Files first (image -> QR tab, .apk -> APK tab)
     for (final attachment in media.attachments ?? const <SharedAttachment?>[]) {
       if (attachment == null) continue;

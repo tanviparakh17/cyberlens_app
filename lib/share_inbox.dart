@@ -39,6 +39,14 @@ class ShareInbox {
 
   static void send(ShareRequest request) => current.value = request;
 
+  /// Returns the text if it is a single bare link (nothing else), otherwise null.
+  static String? bareLink(String raw) {
+    final text = raw.trim();
+    if (text.isEmpty || _whitespace.hasMatch(text)) return null;
+    final match = _urlPattern.firstMatch(text);
+    return (match != null && match.start == 0) ? text : null;
+  }
+
   /// Builds a text request for a chosen tab (also used by the "Wrong tab?" buttons).
   static ShareRequest build(ShareKind kind, String original,
       {required bool autoScan}) {
