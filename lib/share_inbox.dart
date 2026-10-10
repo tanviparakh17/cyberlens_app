@@ -1,24 +1,30 @@
 import 'package:flutter/foundation.dart';
 
-/// Which scanner tab a shared text should go to.
-enum ShareKind { url, email }
+/// Which scanner tab a shared item should go to.
+enum ShareKind { url, email, qr, apk }
 
 class ShareRequest {
   final ShareKind kind;
 
-  /// What goes into the tab's text field (for URL: just the link).
+  /// Text kinds: what goes into the tab's text field (for URL: just the link).
   final String text;
 
-  /// The full text that was shared, kept for the "Wrong tab?" button.
+  /// Text kinds: the full text that was shared, kept for the "Wrong tab?" button.
   final String original;
 
   final bool autoScan;
 
+  /// File kinds (qr, apk): local path and name of the shared file.
+  final String? path;
+  final String? name;
+
   const ShareRequest({
     required this.kind,
-    required this.text,
-    required this.original,
-    required this.autoScan,
+    this.text = '',
+    this.original = '',
+    this.autoScan = false,
+    this.path,
+    this.name,
   });
 }
 
@@ -33,7 +39,7 @@ class ShareInbox {
 
   static void send(ShareRequest request) => current.value = request;
 
-  /// Builds a request for a chosen tab (also used by the "Wrong tab?" buttons).
+  /// Builds a text request for a chosen tab (also used by the "Wrong tab?" buttons).
   static ShareRequest build(ShareKind kind, String original,
       {required bool autoScan}) {
     final full = original.trim();

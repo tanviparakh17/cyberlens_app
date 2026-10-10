@@ -80,15 +80,58 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleShared(SharedMedia media) {
+    // Files first (image -> QR tab, .apk -> APK tab)
+    for (final attachment in media.attachments ?? const <SharedAttachment?>[]) {
+      if (attachment == null) continue;
+      final path = attachment.path;
+      final name = path.split(RegExp(r'[\\/]')).last;
+      if (path.toLowerCase().endsWith('.apk')) {
+        ShareInbox.send(ShareRequest(kind: ShareKind.apk, path: path, name: name));
+        return;
+      }
+      if (attachment.type == SharedAttachmentType.image) {
+        ShareInbox.send(ShareRequest(
+          kind: ShareKind.qr,
+          path: path,
+          name: name,
+          autoScan: true,
+        ));
+        return;
+      }
+      _showMessage(
+          'CyberLens can scan links, text, images (QR codes) and .apk files.');
+      return;
+    }
+
+    // Then plain text (link -> URL tab, other text -> Email tab)
     final text = media.content;
     if (text == null || text.trim().isEmpty) return;
     ShareInbox.send(ShareInbox.routeText(text));
   }
 
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  int _tabFor(ShareKind kind) {
+    switch (kind) {
+      case ShareKind.url:
+        return 0;
+      case ShareKind.email:
+        return 1;
+      case ShareKind.qr:
+        return 2;
+      case ShareKind.apk:
+        return 4;
+    }
+  }
+
   void _onInbox() {
     final request = ShareInbox.current.value;
     if (request == null) return;
-    setState(() => _index = request.kind == ShareKind.url ? 0 : 1);
+    setState(() => _index = _tabFor(request.kind));
   }
 
   @override

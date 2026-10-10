@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../api_service.dart';
 import '../scan_widgets.dart';
+import '../share_inbox.dart';
 
 class QrTab extends StatefulWidget {
   const QrTab({super.key});
@@ -14,8 +15,52 @@ class QrTab extends StatefulWidget {
 }
 
 class _QrTabState extends State<QrTab> with ScanRunner<QrTab> {
+  static const int _maxBytes = 5 * 1024 * 1024; // same limit as the server
+
   final ImagePicker _picker = ImagePicker();
   String? _imagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    ShareInbox.current.addListener(_onShare);
+  }
+
+  @override
+  void dispose() {
+    ShareInbox.current.removeListener(_onShare);
+    super.dispose();
+  }
+
+  void _onShare() {
+    final request = ShareInbox.current.value;
+    if (request == null || request.kind != ShareKind.qr) return;
+    final path = request.path;
+    if (path == null) return;
+    _scanShared(path, request.name ?? 'shared_image');
+  }
+
+  Future<void> _scanShared(String path, String name) async {
+    setState(() {
+      _imagePath = path;
+      result = null;
+      error = null;
+    });
+    try {
+      final size = await File(path).length();
+      if (!mounted) return;
+      if (size > _maxBytes) {
+        setState(() => error =
+            'This image is larger than 5 MB, which is the upload limit. Please share a smaller one.');
+        return;
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => error = 'Could not read the shared image. Please try again.');
+      return;
+    }
+    runScan(() => ApiService.analyzeQr(path, name));
+  }
 
   Future<void> _pick(ImageSource source) async {
     try {

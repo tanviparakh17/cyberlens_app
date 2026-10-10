@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../api_service.dart';
 import '../scan_widgets.dart';
+import '../share_inbox.dart';
 
 class ApkTab extends StatefulWidget {
   const ApkTab({super.key});
@@ -15,6 +18,74 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
   static const int _maxBytes = 25 * 1024 * 1024; // same limit as the server
 
   PlatformFile? _file;
+  bool _fromShare = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ShareInbox.current.addListener(_onShare);
+  }
+
+  @override
+  void dispose() {
+    ShareInbox.current.removeListener(_onShare);
+    super.dispose();
+  }
+
+  void _reject(String message) {
+    setState(() {
+      _file = null;
+      _fromShare = false;
+      result = null;
+      error = message;
+    });
+  }
+
+  /// Returns true if the file can be scanned; otherwise shows the reason.
+  bool _check(PlatformFile file) {
+    if (!file.name.toLowerCase().endsWith('.apk')) {
+      _reject('Please choose an .apk file.');
+      return false;
+    }
+    if (file.size > _maxBytes) {
+      _reject('This APK is larger than 25 MB, which is the upload limit.');
+      return false;
+    }
+    if (file.path == null) {
+      _reject('Could not read the selected file. Please try another one.');
+      return false;
+    }
+    return true;
+  }
+
+  void _onShare() {
+    final request = ShareInbox.current.value;
+    if (request == null || request.kind != ShareKind.apk) return;
+    final path = request.path;
+    if (path == null) return;
+    _prepareShared(path, request.name ?? path.split(RegExp(r'[\\/]')).last);
+  }
+
+  Future<void> _prepareShared(String path, String name) async {
+    int size;
+    try {
+      size = await File(path).length();
+    } catch (_) {
+      if (!mounted) return;
+      _reject('Could not read the shared file. Please try again.');
+      return;
+    }
+    if (!mounted) return;
+    final file = PlatformFile(name: name, size: size, path: path);
+    if (!_check(file)) return;
+    // Wait for the person to confirm: scanning uploads the whole APK
+    setState(() {
+      _file = file;
+      _fromShare = true;
+      result = null;
+      error = null;
+    });
+  }
 
   Future<void> _pick() async {
     try {
@@ -23,32 +94,10 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
       if (picked == null || picked.files.isEmpty) return;
 
       final file = picked.files.single;
-      if (!file.name.toLowerCase().endsWith('.apk')) {
-        setState(() {
-          _file = null;
-          result = null;
-          error = 'Please choose an .apk file.';
-        });
-        return;
-      }
-      if (file.size > _maxBytes) {
-        setState(() {
-          _file = null;
-          result = null;
-          error = 'This APK is larger than 25 MB, which is the upload limit.';
-        });
-        return;
-      }
-      if (file.path == null) {
-        setState(() {
-          _file = null;
-          result = null;
-          error = 'Could not read the selected file. Please try another one.';
-        });
-        return;
-      }
+      if (!_check(file)) return;
       setState(() {
         _file = file;
+        _fromShare = false;
         result = null;
         error = null;
       });
@@ -83,6 +132,15 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
           ),
           if (file != null) ...[
             const SizedBox(height: 12),
+            if (_fromShare)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Shared from another app. Scanning uploads this APK to the '
+                  'CyberLens server.',
+                  style: TextStyle(color: Colors.white60),
+                ),
+              ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.android),
@@ -91,9 +149,11 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
             ),
             ElevatedButton(
               onPressed: loading ? null : _scan,
-              child: const Padding(
-                padding: EdgeInsets.all(12),
-                child: Text('🔎 Scan APK'),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(_fromShare
+                    ? '\u{1F50E} Scan this APK?'
+                    : '\u{1F50E} Scan APK'),
               ),
             ),
           ],
