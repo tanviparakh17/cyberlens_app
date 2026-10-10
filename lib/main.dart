@@ -1,5 +1,9 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:share_handler/share_handler.dart';
+
+import 'share_inbox.dart';
 import 'tabs/account_tab.dart';
 import 'tabs/apk_tab.dart';
 import 'tabs/email1_tab.dart';
@@ -34,6 +38,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
+  StreamSubscription<SharedMedia>? _shareSub;
 
   static const List<String> _titles = [
     'URL Phishing Scanner',
@@ -44,10 +49,53 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    ShareInbox.current.addListener(_onInbox);
+    // Wait for the first frame so the tabs are already listening
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initShare());
+  }
+
+  @override
+  void dispose() {
+    ShareInbox.current.removeListener(_onInbox);
+    _shareSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initShare() async {
+    final handler = ShareHandlerPlatform.instance;
+    try {
+      // Share that launched the app (app was closed)
+      final initial = await handler.getInitialSharedMedia();
+      if (initial != null) {
+        _handleShared(initial);
+        await handler.resetInitialSharedMedia();
+      }
+    } catch (_) {
+      // Sharing is optional; the 5 tabs keep working without it
+    }
+    // Shares that arrive while the app is already open
+    _shareSub = handler.sharedMediaStream.listen(_handleShared);
+  }
+
+  void _handleShared(SharedMedia media) {
+    final text = media.content;
+    if (text == null || text.trim().isEmpty) return;
+    ShareInbox.send(ShareInbox.routeText(text));
+  }
+
+  void _onInbox() {
+    final request = ShareInbox.current.value;
+    if (request == null) return;
+    setState(() => _index = request.kind == ShareKind.url ? 0 : 1);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('🔍 ${_titles[_index]}'),
+        title: Text('\u{1F50D} ${_titles[_index]}'),
         backgroundColor: const Color(0xFF0F172A),
       ),
       // IndexedStack keeps each tab's state when you switch between tabs

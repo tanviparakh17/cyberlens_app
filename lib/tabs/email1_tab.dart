@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../api_service.dart';
 import '../scan_widgets.dart';
+import '../share_inbox.dart';
 
 class EmailTab extends StatefulWidget {
   const EmailTab({super.key});
@@ -14,17 +15,48 @@ class EmailTab extends StatefulWidget {
 class _EmailTabState extends State<EmailTab> with ScanRunner<EmailTab> {
   final TextEditingController _controller = TextEditingController();
 
+  // Full text of the last share that landed here (for the "Wrong tab?" button)
+  String? _sharedOriginal;
+
+  @override
+  void initState() {
+    super.initState();
+    ShareInbox.current.addListener(_onShare);
+  }
+
   @override
   void dispose() {
+    ShareInbox.current.removeListener(_onShare);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onShare() {
+    final request = ShareInbox.current.value;
+    if (request == null || request.kind != ShareKind.email) return;
+    setState(() {
+      _controller.text = request.text;
+      _sharedOriginal = request.original;
+      result = null;
+      error = null;
+    });
+    if (request.autoScan) _scan();
+  }
+
+  void _scanAsUrl() {
+    final original = _sharedOriginal;
+    if (original == null) return;
+    ShareInbox.send(ShareInbox.build(ShareKind.url, original, autoScan: true));
   }
 
   Future<void> _paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text;
     if (text != null && text.trim().isNotEmpty) {
-      setState(() => _controller.text = text);
+      setState(() {
+        _controller.text = text;
+        _sharedOriginal = null;
+      });
     }
   }
 
@@ -67,11 +99,19 @@ class _EmailTabState extends State<EmailTab> with ScanRunner<EmailTab> {
                 onPressed: loading ? null : _scan,
                 child: const Padding(
                   padding: EdgeInsets.all(12),
-                  child: Text('🔎 Scan Email'),
+                  child: Text('\u{1F50E} Scan Email'),
                 ),
               ),
             ),
           ]),
+          if (_sharedOriginal != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: loading ? null : _scanAsUrl,
+                child: const Text('Wrong tab? Scan as URL'),
+              ),
+            ),
           const SizedBox(height: 16),
           ScanOutput(loading: loading, error: error, result: result),
         ],
