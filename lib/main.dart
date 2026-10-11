@@ -6,6 +6,8 @@ import 'package:share_handler/share_handler.dart';
 
 import 'app_theme.dart';
 import 'home_menu.dart';
+import 'l10n/app_strings.dart';
+import 'language_picker.dart';
 import 'share_inbox.dart';
 import 'tabs/account_tab.dart';
 import 'tabs/apk_tab.dart';
@@ -13,18 +15,32 @@ import 'tabs/email1_tab.dart';
 import 'tabs/qr_tab.dart';
 import 'tabs/url_tab.dart';
 
-void main() => runApp(const CyberLensApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final locale = LocaleController();
+  await locale.load(); // reads the saved language before the first frame
+  runApp(AppStringsScope(controller: locale, child: const CyberLensApp()));
+}
 
 class CyberLensApp extends StatelessWidget {
   const CyberLensApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // read(), not of(): the app shell must not rebuild when the language changes
+    final locale = AppStringsScope.read(context);
     return MaterialApp(
       title: 'CyberLens',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const HomeScreen(),
+      home: locale.hasChosen
+          ? const HomeScreen()
+          : LanguagePickerScreen(
+              firstRun: true,
+              onDone: (ctx) => Navigator.of(ctx).pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              ),
+            ),
     );
   }
 }
@@ -44,22 +60,23 @@ class _HomeScreenState extends State<HomeScreen> {
   // True if the app was opened by (or already received) a share
   bool _gotShare = false;
 
-  static const List<String> _titles = [
-    '\u{1F6E1}\u{FE0F} CyberLens',
-    'Link Checker',
-    'Email Checker',
-    'QR Checker',
-    'Account Check',
-    'APK Checker',
+  // Text keys, looked up in the chosen language (see lib/l10n)
+  static const List<String> _titleKeys = [
+    'title.menu',
+    'title.url',
+    'title.email',
+    'title.qr',
+    'title.account',
+    'title.apk',
   ];
 
-  static const List<String> _subtitles = [
-    'Your safety buddy',
-    'Is this link safe?',
-    'Spot phishing emails',
-    'Check a QR code before you trust it',
-    'Demo with simulated activity',
-    'Check an app file before installing',
+  static const List<String> _subtitleKeys = [
+    'sub.menu',
+    'sub.url',
+    'sub.email',
+    'sub.qr',
+    'sub.account',
+    'sub.apk',
   ];
 
   @override
@@ -105,12 +122,12 @@ class _HomeScreenState extends State<HomeScreen> {
         SnackBar(
           duration: const Duration(seconds: 12),
           content: Text(
-            'Scan copied link?\n$link',
+            '${context.t('clip.ask')}\n$link',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           action: SnackBarAction(
-            label: 'Scan',
+            label: context.t('clip.scan'),
             onPressed: () => ShareInbox.send(
               ShareInbox.build(ShareKind.url, link, autoScan: true),
             ),
@@ -143,8 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
         return;
       }
-      _showMessage(
-          'CyberLens can scan links, text, images (QR codes) and .apk files.');
+      _showMessage('share.unsupported');
       return;
     }
 
@@ -154,10 +170,11 @@ class _HomeScreenState extends State<HomeScreen> {
     ShareInbox.send(ShareInbox.routeText(text));
   }
 
-  void _showMessage(String message) {
+  /// [key] is a text key from lib/l10n, translated here.
+  void _showMessage(String key) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+        .showSnackBar(SnackBar(content: Text(context.t(key))));
   }
 
   int _pageFor(ShareKind kind) {
@@ -180,6 +197,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _goTo(int page) => setState(() => _page = page);
+
+  void _openLanguagePicker() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LanguagePickerScreen(
+          firstRun: false,
+          onDone: (ctx) => Navigator.of(ctx).pop(),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -213,25 +241,36 @@ class _HomeScreenState extends State<HomeScreen> {
               ? null
               : IconButton(
                   icon: const Icon(Icons.arrow_back_rounded),
-                  tooltip: 'Back to all checkers',
+                  tooltip: context.t('tip.back'),
                   onPressed: () => _goTo(0),
                 ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.translate_rounded),
+              tooltip: context.t('tip.language'),
+              onPressed: _openLanguagePicker,
+            ),
+          ],
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: Text(
-                  _titles[_page],
+                  context.t(_titleKeys[_page]),
                   key: ValueKey<String>('t$_page'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                 ),
               ),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: Text(
-                  _subtitles[_page],
+                  context.t(_subtitleKeys[_page]),
                   key: ValueKey<String>('s$_page'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 ),
               ),

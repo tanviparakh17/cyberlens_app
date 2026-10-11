@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import 'l10n/app_strings.dart';
 
 class _Feature {
   final String emoji;
-  final String title;
-  final String subtitle;
+  final String titleKey;
+  final String descKey;
   final Color tint;
 
-  const _Feature(this.emoji, this.title, this.subtitle, this.tint);
+  const _Feature(this.emoji, this.titleKey, this.descKey, this.tint);
 }
 
 /// Start screen: every checker as a card, one below the other.
@@ -19,17 +20,11 @@ class HomeMenu extends StatelessWidget {
   const HomeMenu({super.key, required this.onOpen});
 
   static const List<_Feature> _features = [
-    _Feature('\u{1F517}', 'Link Checker',
-        'Is this link safe? Paste it or share it to CyberLens.', AppColors.mintSoft),
-    _Feature('\u{1F48C}', 'Email Checker',
-        'Spot phishing emails before you click anything.', AppColors.skySoft),
-    _Feature('\u{1F4F7}', 'QR Checker',
-        'See where a QR code really leads.', AppColors.mintSoft),
-    _Feature('\u{1F512}', 'Account Check',
-        'Demo: spot a hacked-account pattern (simulated activity, no real messages).',
-        AppColors.skySoft),
-    _Feature('\u{1F916}', 'APK Checker',
-        'Check an app file before you install it.', AppColors.mintSoft),
+    _Feature('\u{1F517}', 'title.url', 'desc.url', AppColors.mintSoft),
+    _Feature('\u{1F48C}', 'title.email', 'desc.email', AppColors.skySoft),
+    _Feature('\u{1F4F7}', 'title.qr', 'desc.qr', AppColors.mintSoft),
+    _Feature('\u{1F512}', 'title.account', 'desc.account', AppColors.skySoft),
+    _Feature('\u{1F916}', 'title.apk', 'desc.apk', AppColors.mintSoft),
   ];
 
   @override
@@ -37,15 +32,14 @@ class HomeMenu extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 22, 16, 24),
       children: [
-        const Text(
-          'What do you want to check today?',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        Text(
+          context.t('menu.heading'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
-        const Text(
-          'Tap a card to start. You can also share links, images or APK files '
-          'to CyberLens from any app.',
-          style: TextStyle(color: AppColors.muted),
+        Text(
+          context.t('menu.hint'),
+          style: const TextStyle(color: AppColors.muted),
         ),
         const SizedBox(height: 20),
         for (var i = 0; i < _features.length; i++)
@@ -112,13 +106,13 @@ class _FeatureCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          feature.title,
+                          context.t(feature.titleKey),
                           style: const TextStyle(
                               fontSize: 17, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          feature.subtitle,
+                          context.t(feature.descKey),
                           style: const TextStyle(
                               fontSize: 13, color: AppColors.muted),
                         ),

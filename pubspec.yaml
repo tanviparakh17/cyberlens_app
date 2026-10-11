@@ -36,6 +36,7 @@ dependencies:
   image_picker: ^1.1.2
   file_picker: ^10.3.10
   share_handler: ^0.0.25
+  shared_preferences: ^2.5.6
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
