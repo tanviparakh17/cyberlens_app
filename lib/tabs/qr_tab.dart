@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../api_service.dart';
+import '../app_theme.dart';
+import '../l10n/app_strings.dart';
 import '../scan_widgets.dart';
 import '../share_inbox.dart';
 
@@ -50,13 +52,12 @@ class _QrTabState extends State<QrTab> with ScanRunner<QrTab> {
       final size = await File(path).length();
       if (!mounted) return;
       if (size > _maxBytes) {
-        setState(() => error =
-            'This image is larger than 5 MB, which is the upload limit. Please share a smaller one.');
+        setState(() => error = context.t('qr.err.large'));
         return;
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() => error = 'Could not read the shared image. Please try again.');
+      setState(() => error = context.t('qr.err.read'));
       return;
     }
     runScan(() => ApiService.analyzeQr(path, name));
@@ -70,20 +71,29 @@ class _QrTabState extends State<QrTab> with ScanRunner<QrTab> {
       setState(() => _imagePath = file.path);
       runScan(() => ApiService.analyzeQr(file.path, file.name));
     } catch (_) {
-      setState(() => error = 'Could not open the image picker. Please try again.');
+      if (!mounted) return;
+      setState(() => error = context.t('qr.err.picker'));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // The server's "no QR code" message is English, so it is swapped for the translated one
+    String? shownError = error;
+    if (shownError != null && shownError.contains('No QR code')) {
+      shownError = context.t('qr.err.none');
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Take a clear, straight-on photo of a QR code, or pick one from your gallery. '
-            'The link inside is decoded and checked for phishing.',
+          Text(context.t('qr.desc')),
+          const SizedBox(height: 6),
+          Text(
+            context.t('qr.tip'),
+            style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
           ),
           const SizedBox(height: 12),
           Row(children: [
@@ -91,7 +101,7 @@ class _QrTabState extends State<QrTab> with ScanRunner<QrTab> {
               child: ElevatedButton.icon(
                 onPressed: loading ? null : () => _pick(ImageSource.camera),
                 icon: const Icon(Icons.photo_camera),
-                label: const Text('Camera'),
+                label: Text(context.t('qr.camera')),
               ),
             ),
             const SizedBox(width: 12),
@@ -99,7 +109,7 @@ class _QrTabState extends State<QrTab> with ScanRunner<QrTab> {
               child: ElevatedButton.icon(
                 onPressed: loading ? null : () => _pick(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library),
-                label: const Text('Gallery'),
+                label: Text(context.t('qr.gallery')),
               ),
             ),
           ]),
@@ -111,7 +121,12 @@ class _QrTabState extends State<QrTab> with ScanRunner<QrTab> {
             ),
           ],
           const SizedBox(height: 16),
-          ScanOutput(loading: loading, error: error, result: result),
+          ScanOutput(
+            loading: loading,
+            error: shownError,
+            result: result,
+            loadingText: context.t('scan.loading'),
+          ),
         ],
       ),
     );

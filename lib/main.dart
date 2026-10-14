@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const UrlTab(),
             const EmailTab(),
             const QrTab(),
-            const AccountTab(),
+            AccountTab(onOpenChecker: _goTo),
             const ApkTab(),
           ],
         ),

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'strings_en.dart';
+import 'strings_en_result.dart';
 import 'strings_hi.dart';
+import 'strings_hi_result.dart';
 import 'strings_mr.dart';
+import 'strings_mr_result.dart';
 
 /// One language the app can show.
 class AppLanguage {
@@ -14,17 +17,22 @@ class AppLanguage {
   const AppLanguage(this.code, this.nativeName, {this.beta = true});
 }
 
-/// Languages shown in the picker. To add one: add it here, in _tables, and write one strings file.
+/// Languages shown in the picker. To add one: add it here, in _tables, and write its strings files.
 const List<AppLanguage> kLanguages = [
   AppLanguage('en', 'English', beta: false),
   AppLanguage('hi', 'हिन्दी'),
   AppLanguage('mr', 'मराठी'),
 ];
 
-const Map<String, Map<String, String>> _tables = {
-  'en': stringsEn,
-  'hi': stringsHi,
-  'mr': stringsMr,
+// Each language has two files: the main one and the *_result one (result screen).
+// These maps are `final`, not `const`: a const map refuses the same key twice, while a normal
+// map lets the later file win. So a key that exists in both files of a language is fine.
+final Map<String, String> _en = {...stringsEn, ...stringsEnResult};
+
+final Map<String, Map<String, String>> _tables = {
+  'en': _en,
+  'hi': {...stringsHi, ...stringsHiResult},
+  'mr': {...stringsMr, ...stringsMrResult},
 };
 
 /// Holds the chosen language, saves it, and looks up texts.
@@ -44,7 +52,7 @@ class LocaleController extends ChangeNotifier {
     assert(() {
       // Debug-only reminder of keys a translation has not covered yet
       for (final entry in _tables.entries) {
-        final missing = stringsEn.keys.where((k) => !entry.value.containsKey(k));
+        final missing = _en.keys.where((k) => !entry.value.containsKey(k));
         if (missing.isNotEmpty) {
           debugPrint('[i18n] ${entry.key} is missing: ${missing.join(', ')}');
         }
@@ -79,7 +87,7 @@ class LocaleController extends ChangeNotifier {
   /// Text for [key] in the current language. Falls back to English, then to the key itself,
   /// so a missing translation can never crash the app.
   String text(String key, [Map<String, String>? args]) {
-    var value = _tables[_code]?[key] ?? stringsEn[key] ?? key;
+    var value = _tables[_code]?[key] ?? _en[key] ?? key;
     if (args != null) {
       args.forEach((name, replacement) {
         value = value.replaceAll('{$name}', replacement);
@@ -91,7 +99,7 @@ class LocaleController extends ChangeNotifier {
 
 /// Makes the controller available to every widget and rebuilds them when the language changes.
 class AppStringsScope extends InheritedNotifier<LocaleController> {
-    const AppStringsScope({
+  const AppStringsScope({
     super.key,
     required LocaleController controller,
     required super.child,
@@ -116,4 +124,5 @@ extension AppStringsContext on BuildContext {
   /// Usage: context.t('menu.heading')
   String t(String key, [Map<String, String>? args]) =>
       AppStringsScope.of(this).text(key, args);
+
 }
