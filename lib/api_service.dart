@@ -28,8 +28,8 @@ class ApiException implements Exception {
 
 class ApiService {
   // Render's free tier can take 50+ seconds to wake up (cold start)
-  static const Duration _jsonTimeout = Duration(seconds: 90);
-  static const Duration _uploadTimeout = Duration(seconds: 150);
+  static const Duration _jsonTimeout = Duration(seconds: 180);
+  static const Duration _uploadTimeout = Duration(seconds: 240);
 
   static const String _timeoutMessage =
       'The server took too long to respond. It may be waking up, so please try again.';
@@ -73,6 +73,16 @@ class ApiService {
   }
 
   // ------------------------------------------------------------------ helpers
+
+  /// Wakes the free server up when the app opens (it sleeps after idle time).
+  /// The answer is ignored; errors are ignored too.
+  static Future<void> warmUp() async {
+    try {
+      await http
+          .get(Uri.parse('$apiBase/analyze/account/scenarios'))
+          .timeout(const Duration(seconds: 120));
+    } catch (_) {}
+  }
 
   static Future<Map<String, dynamic>> _postJson(
       String path, Map<String, dynamic> body) async {

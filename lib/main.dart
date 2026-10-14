@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_handler/share_handler.dart';
 
+import 'api_service.dart';
 import 'app_theme.dart';
 import 'home_menu.dart';
 import 'l10n/app_strings.dart';
@@ -83,6 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     ShareInbox.current.addListener(_onInbox);
+    // Wake the free server early, so the first scan is faster
+    unawaited(ApiService.warmUp());
     // Wait for the first frame so the tabs are already listening
     WidgetsBinding.instance.addPostFrameCallback((_) => _initShare());
   }
