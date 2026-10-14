@@ -258,11 +258,16 @@ class _SimpleView extends StatelessWidget {
     final siteHost = _siteHost(result);
 
     final verdictWord = _tOr(context, 'verdict.$verdict', verdict.toUpperCase());
+    // A "safe" verdict with a middle score (for example 50%) must not read "Low risk"
+    final unsure = level == _Level.safe && risk >= 35;
     final levelKey = level == _Level.danger
         ? 'danger'
-        : (level == _Level.warn ? 'suspicious' : 'safe');
-    final riskKey =
-        level == _Level.danger ? 'high' : (level == _Level.warn ? 'medium' : 'low');
+        : (level == _Level.warn || unsure ? 'suspicious' : 'safe');
+    final riskKey = level == _Level.danger
+        ? 'high'
+        : (unsure
+            ? (risk >= 70 ? 'high' : 'medium')
+            : (level == _Level.warn ? 'medium' : 'low'));
 
     String tipKey;
     if (isAccountDemo) {
@@ -338,6 +343,11 @@ class _SimpleView extends StatelessWidget {
             ],
           ),
         ),
+
+        if (unsure) ...[
+          const SizedBox(height: 12),
+          _InfoBox(text: context.t('risk.unsure')),
+        ],
 
         // ---- Website the link points to (so you can judge it yourself)
         if (siteHost != null) ...[

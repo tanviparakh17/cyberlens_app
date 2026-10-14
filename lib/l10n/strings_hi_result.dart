@@ -138,4 +138,7 @@ const Map<String, String> stringsHiResult = {
   'btn.wrongemail': 'गलत टैब? ईमेल की तरह जाँचें',
   'btn.wrongurl': 'गलत टैब? लिंक की तरह जाँचें',
   'hint.email': 'पूरा ईमेल (विषय और मुख्य भाग) यहाँ पेस्ट करें',
+
+  // Not-very-sure note
+  'risk.unsure': 'चेकर को इस बारे में पक्का भरोसा नहीं है। नतीजा साफ़ "सुरक्षित" नहीं है, इसलिए सावधान रहें।',
 };

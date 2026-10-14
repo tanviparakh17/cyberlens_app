@@ -138,4 +138,7 @@ const Map<String, String> stringsEnResult = {
   'btn.wrongemail': 'Wrong tab? Scan as email',
   'btn.wrongurl': 'Wrong tab? Scan as URL',
   'hint.email': 'Paste the full email (subject and body) here',
+
+  // Not-very-sure note
+  'risk.unsure': 'The checker is not very sure about this one. The result is not a clear "safe", so please be careful.',
 };
