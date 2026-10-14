@@ -106,4 +106,8 @@ const Map<String, String> stringsHiResult = {
   'f.longest_host_label': 'वेबसाइट के नाम के सबसे लंबे हिस्से की लंबाई',
   'f.path_special_ratio': 'वेबसाइट के नाम के बाद के हिस्से में विशेष चिह्नों का हिस्सा',
   'f.tfidf': 'ईमेल में शब्द "{word}"',
+
+  // Website the link points to
+  'site.goesto': 'यह लिंक यहाँ जाता है',
+  'site.check': 'जाँच लें कि यही वह वेबसाइट है जिसकी आप उम्मीद कर रहे थे। ठग अक्सर असली वेबसाइट से मिलते-जुलते नाम इस्तेमाल करते हैं।',
 };

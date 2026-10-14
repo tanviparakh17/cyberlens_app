@@ -256,6 +256,7 @@ class _SimpleView extends StatelessWidget {
     final isApk = result['package_name'] != null;
     final isAccountDemo =
         result['scenario'] != null || result['scenario_description'] != null;
+    final siteHost = _siteHost(result);
 
     final verdictWord = _tOr(context, 'verdict.$verdict', verdict.toUpperCase());
     final levelKey = level == _Level.danger
@@ -338,6 +339,12 @@ class _SimpleView extends StatelessWidget {
             ],
           ),
         ),
+
+        // ---- Website the link points to (so you can judge it yourself)
+        if (siteHost != null) ...[
+          const SizedBox(height: 12),
+          _SiteBox(host: siteHost),
+        ],
 
         // ---- Honest warnings
         if (modelSource != null && modelSource.startsWith('synthetic')) ...[
@@ -437,6 +444,63 @@ class _SimpleView extends StatelessWidget {
         Text(context.t('hint.technical'),
             style: const TextStyle(fontSize: 12, color: AppColors.muted)),
       ],
+    );
+  }
+}
+
+/// Website name of the scanned or decoded link (for example "texasroadhouse.com"),
+/// or null when the result has no link or the link cannot be read.
+String? _siteHost(Map<String, dynamic> result) {
+  final raw = result['decoded_url'] ?? result['url'];
+  if (raw is! String) return null;
+  var text = raw.trim();
+  if (text.isEmpty) return null;
+  if (!text.contains('://')) text = 'http://$text';
+  final host = Uri.tryParse(text)?.host.toLowerCase() ?? '';
+  // A real website name has a dot; this also skips QR content like Wi-Fi or plain text
+  if (!host.contains('.')) return null;
+  return host.startsWith('www.') ? host.substring(4) : host;
+}
+
+/// Shows which website a link goes to, in big letters.
+class _SiteBox extends StatelessWidget {
+  final String host;
+
+  const _SiteBox({required this.host});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        border: Border.all(color: AppColors.track, width: 1.5),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.language_rounded, color: AppColors.muted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.t('site.goesto'),
+                    style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                const SizedBox(height: 2),
+                SelectableText(host,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(context.t('site.check'),
+                    style: const TextStyle(
+                        fontSize: 12.5, color: AppColors.muted)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

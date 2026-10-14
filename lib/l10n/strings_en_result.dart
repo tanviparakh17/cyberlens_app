@@ -106,4 +106,8 @@ const Map<String, String> stringsEnResult = {
   'f.longest_host_label': 'Length of the longest part of the website name',
   'f.path_special_ratio': 'Share of special symbols in the part of the link after the website name',
   'f.tfidf': 'The word "{word}" in the email',
+
+  // Website the link points to
+  'site.goesto': 'This link goes to',
+  'site.check': 'Make sure this is the website you expected. Scammers often use names that look almost like a real one.',
 };
