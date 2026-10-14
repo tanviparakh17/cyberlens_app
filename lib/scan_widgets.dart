@@ -22,10 +22,10 @@ mixin ScanRunner<T extends StatefulWidget> on State<T> {
       setState(() => result = data);
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => error = e.message);
+      setState(() => error = e.text(context));
     } catch (_) {
       if (!mounted) return;
-      setState(() => error = 'Something went wrong. Please try again.');
+      setState(() => error = context.t('err.generic'));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -37,15 +37,14 @@ class ScanOutput extends StatelessWidget {
   final bool loading;
   final String? error;
   final Map<String, dynamic>? result;
-  final String loadingText;
+  final String? loadingText;
 
   const ScanOutput({
     super.key,
     required this.loading,
     required this.error,
     required this.result,
-    this.loadingText =
-        'Scanning... if the server is waking up, this can take up to 50 seconds.',
+    this.loadingText,
   });
 
   @override
@@ -57,7 +56,7 @@ class ScanOutput extends StatelessWidget {
           Column(children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 8),
-            Text(loadingText, textAlign: TextAlign.center),
+            Text(loadingText ?? context.t('load.scan'), textAlign: TextAlign.center),
           ]),
         if (error != null)
           Text(error!, style: const TextStyle(color: AppColors.danger)),

@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../api_service.dart';
+import '../l10n/app_strings.dart';
 import '../scan_widgets.dart';
 import '../app_theme.dart';
 import '../share_inbox.dart';
@@ -45,15 +46,15 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
   /// Returns true if the file can be scanned; otherwise shows the reason.
   bool _check(PlatformFile file) {
     if (!file.name.toLowerCase().endsWith('.apk')) {
-      _reject('Please choose an .apk file.');
+      _reject(context.t('err.apkext'));
       return false;
     }
     if (file.size > _maxBytes) {
-      _reject('This APK is larger than 25 MB, which is the upload limit.');
+      _reject(context.t('err.apksize'));
       return false;
     }
     if (file.path == null) {
-      _reject('Could not read the selected file. Please try another one.');
+      _reject(context.t('err.apkread'));
       return false;
     }
     return true;
@@ -73,7 +74,7 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
       size = await File(path).length();
     } catch (_) {
       if (!mounted) return;
-      _reject('Could not read the shared file. Please try again.');
+      _reject(context.t('err.sharedread'));
       return;
     }
     if (!mounted) return;
@@ -103,7 +104,8 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
         error = null;
       });
     } catch (_) {
-      setState(() => error = 'Could not open the file picker. Please try again.');
+      if (!mounted) return;
+      setState(() => error = context.t('err.picker'));
     }
   }
 
@@ -121,25 +123,24 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Pick an APK file (up to 25 MB). CyberLens analyses the permissions it '
-            'requests and explains which ones raise the risk.',
-          ),
+          Text(context.t('apk.intro')),
+          const SizedBox(height: 6),
+          Text(context.t('apk.slow'),
+              style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: loading ? null : _pick,
             icon: const Icon(Icons.folder_open),
-            label: const Text('Choose APK file'),
+            label: Text(context.t('apk.choose')),
           ),
           if (file != null) ...[
             const SizedBox(height: 12),
             if (_fromShare)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  'Shared from another app. Scanning uploads this APK to the '
-                  'CyberLens server.',
-                  style: TextStyle(color: AppColors.muted),
+                  context.t('apk.shared'),
+                  style: const TextStyle(color: AppColors.muted),
                 ),
               ),
             ListTile(
@@ -153,8 +154,8 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Text(_fromShare
-                    ? '\u{1F50E} Scan this APK?'
-                    : '\u{1F50E} Scan APK'),
+                    ? '\u{1F50E} ${context.t('btn.scanapk.q')}'
+                    : '\u{1F50E} ${context.t('btn.scanapk')}'),
               ),
             ),
           ],
@@ -163,7 +164,7 @@ class _ApkTabState extends State<ApkTab> with ScanRunner<ApkTab> {
             loading: loading,
             error: error,
             result: result,
-            loadingText: 'Uploading and analysing the APK... this can take up to a minute.',
+            loadingText: context.t('load.apk'),
           ),
         ],
       ),

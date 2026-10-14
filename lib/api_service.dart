@@ -1,15 +1,26 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
+
+import 'l10n/app_strings.dart';
 
 // Live backend (deployed on Render)
 const String apiBase = 'https://cyberlens-api-ukku.onrender.com';
 
 /// An error whose message is safe to show directly to the user.
+/// [message] is the English text. When [key] is set, [text] shows the
+/// translated version instead (see lib/l10n); [suffix] is added after it.
 class ApiException implements Exception {
   final String message;
-  ApiException(this.message);
+  final String? key;
+  final String suffix;
+  ApiException(this.message, {this.key, this.suffix = ''});
+
+  /// Text for the user in the chosen language.
+  String text(BuildContext context) =>
+      key == null ? message : '${context.t(key!)}$suffix';
 
   @override
   String toString() => message;
@@ -55,9 +66,9 @@ class ApiService {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw ApiException(_timeoutMessage);
+      throw ApiException(_timeoutMessage, key: 'err.timeout');
     } catch (_) {
-      throw ApiException(_networkMessage);
+      throw ApiException(_networkMessage, key: 'err.network');
     }
   }
 
@@ -77,9 +88,9 @@ class ApiService {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw ApiException(_timeoutMessage);
+      throw ApiException(_timeoutMessage, key: 'err.timeout');
     } catch (_) {
-      throw ApiException(_networkMessage);
+      throw ApiException(_networkMessage, key: 'err.network');
     }
   }
 
@@ -97,9 +108,9 @@ class ApiService {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw ApiException(_timeoutMessage);
+      throw ApiException(_timeoutMessage, key: 'err.timeout');
     } catch (_) {
-      throw ApiException(_networkMessage);
+      throw ApiException(_networkMessage, key: 'err.network');
     }
   }
 
@@ -112,15 +123,21 @@ class ApiService {
     }
 
     // FastAPI errors look like {"detail": "message"}
+    // A "detail" text comes from the server and stays in English.
     String message = 'Server error (${response.statusCode}). Please try again.';
+    String? key = 'err.server';
+    String suffix = ' (${response.statusCode})';
     try {
       final body = jsonDecode(text);
       if (body is Map && body['detail'] is String) {
         message = body['detail'] as String;
+        key = null;
       } else if (body is Map && body['detail'] is List) {
         message = 'The request was not valid. Please check your input.';
+        key = 'err.invalid';
+        suffix = '';
       }
     } catch (_) {}
-    throw ApiException(message);
+    throw ApiException(message, key: key, suffix: suffix);
   }
 }

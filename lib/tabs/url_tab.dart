@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../api_service.dart';
+import '../l10n/app_strings.dart';
 import '../scan_widgets.dart';
 import '../share_inbox.dart';
 
@@ -63,7 +64,7 @@ class _UrlTabState extends State<UrlTab> with ScanRunner<UrlTab> {
   void _scan() {
     final url = _controller.text.trim();
     if (url.isEmpty) {
-      setState(() => error = 'Please enter a URL first.');
+      setState(() => error = context.t('err.enterurl'));
       return;
     }
     runScan(() => ApiService.analyzeUrl(url));
@@ -84,7 +85,7 @@ class _UrlTabState extends State<UrlTab> with ScanRunner<UrlTab> {
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.content_paste),
-                tooltip: 'Paste',
+                tooltip: context.t('btn.paste'),
                 onPressed: _paste,
               ),
             ),
@@ -92,9 +93,9 @@ class _UrlTabState extends State<UrlTab> with ScanRunner<UrlTab> {
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: loading ? null : _scan,
-            child: const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text('\u{1F50E} Scan URL'),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text('\u{1F50E} ${context.t('btn.scanurl')}'),
             ),
           ),
           if (_sharedOriginal != null)
@@ -102,7 +103,7 @@ class _UrlTabState extends State<UrlTab> with ScanRunner<UrlTab> {
               alignment: Alignment.centerLeft,
               child: TextButton(
                 onPressed: loading ? null : _scanAsEmail,
-                child: const Text('Wrong tab? Scan as email'),
+                child: Text(context.t('btn.wrongemail')),
               ),
             ),
           const SizedBox(height: 16),

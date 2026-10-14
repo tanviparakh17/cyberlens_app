@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../api_service.dart';
+import '../l10n/app_strings.dart';
 import '../scan_widgets.dart';
 import '../share_inbox.dart';
 
@@ -63,7 +64,7 @@ class _EmailTabState extends State<EmailTab> with ScanRunner<EmailTab> {
   void _scan() {
     final text = _controller.text.trim();
     if (text.length < 10) {
-      setState(() => error = 'Please paste the full email text first.');
+      setState(() => error = context.t('err.pasteemail'));
       return;
     }
     runScan(() => ApiService.analyzeEmail(text));
@@ -81,9 +82,9 @@ class _EmailTabState extends State<EmailTab> with ScanRunner<EmailTab> {
             minLines: 8,
             maxLines: 14,
             keyboardType: TextInputType.multiline,
-            decoration: const InputDecoration(
-              hintText: 'Paste the full email (subject and body) here',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: context.t('hint.email'),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -91,15 +92,15 @@ class _EmailTabState extends State<EmailTab> with ScanRunner<EmailTab> {
             OutlinedButton.icon(
               onPressed: _paste,
               icon: const Icon(Icons.content_paste),
-              label: const Text('Paste'),
+              label: Text(context.t('btn.paste')),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
                 onPressed: loading ? null : _scan,
-                child: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text('\u{1F50E} Scan Email'),
+                child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text('\u{1F50E} ${context.t('btn.scanemail')}'),
                 ),
               ),
             ),
@@ -109,7 +110,7 @@ class _EmailTabState extends State<EmailTab> with ScanRunner<EmailTab> {
               alignment: Alignment.centerLeft,
               child: TextButton(
                 onPressed: loading ? null : _scanAsUrl,
-                child: const Text('Wrong tab? Scan as URL'),
+                child: Text(context.t('btn.wrongurl')),
               ),
             ),
           const SizedBox(height: 16),

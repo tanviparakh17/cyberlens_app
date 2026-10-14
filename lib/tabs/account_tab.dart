@@ -119,7 +119,7 @@ class _AccountTabState extends State<AccountTab> with ScanRunner<AccountTab> {
       });
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => _scenarioError = e.message);
+      setState(() => _scenarioError = e.text(context));
     } catch (_) {
       if (!mounted) return;
       setState(() => _scenarioError = context.t('demo.loaderr'));
