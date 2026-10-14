@@ -93,4 +93,17 @@ const Map<String, String> stringsEnResult = {
   'qr.err.picker': 'Could not open the image picker. Please try again.',
   'qr.err.none': 'No QR code found in this image. Take a clear, straight-on photo.',
   'scan.loading': 'Scanning... if the server is waking up, this can take up to 50 seconds.',
+
+  // Friendly names: URL shape features and email words
+  'f.path_depth': 'Number of folders in the link',
+  'f.path_length': 'Length of the part of the link after the website name',
+  'f.query_length': 'Length of the extra details added at the end of the link',
+  'f.num_query_params': 'Number of extra details (parameters) in the link',
+  'f.digit_ratio': 'Share of digits (numbers) in the whole link',
+  'f.host_digit_ratio': 'Share of digits in the website name',
+  'f.host_entropy': 'How random the website name looks',
+  'f.path_entropy': 'How random the part of the link after the website name looks',
+  'f.longest_host_label': 'Length of the longest part of the website name',
+  'f.path_special_ratio': 'Share of special symbols in the part of the link after the website name',
+  'f.tfidf': 'The word "{word}" in the email',
 };

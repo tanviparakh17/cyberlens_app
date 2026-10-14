@@ -99,6 +99,10 @@ String _factorName(BuildContext context, String raw) {
   var key = raw.trim();
   const prefix = 'android.permission.';
   if (key.toLowerCase().startsWith(prefix)) key = key.substring(prefix.length);
+  // Email word features arrive as "tfidf_<word>"
+  if (key.toLowerCase().startsWith('tfidf_')) {
+    return context.t('f.tfidf', {'word': key.substring(6)});
+  }
   final id = 'f.${key.toLowerCase()}';
   final text = context.t(id);
   // Unknown factor: fall back to a tidied-up version of the raw name
